@@ -108,6 +108,89 @@ Esta guía define los estándares de codificación y convenciones para nuestro p
 
 ---
 
+## Diseño de Acceso y Encapsulación
+
+**Visibilidad por Defecto: `internal` No `public`**
+- Preferí `internal` (o equivalente) como nivel de acceso default
+- Exponé solo lo que realmente necesita ser público
+- Eso reduce la superficie de API y facilita cambios futuros
+- Preguntaté: "¿Quién realmente debería poder acceder a esto?"
+
+**Herencia: `sealed` por Defecto**
+- Hacé las clases `sealed` (o `final`) por defecto
+- Permitié herencia solo cuando hay justificación clara
+- Favorí composición sobre herencia
+- La composición es más flexible y evita frigilidad base
+
+**Inmutabilidad: Records y Valores de Dominio**
+- Usá `records` (o equivalent) para tipos immutables
+- Los objetos de valor del dominio deberían ser immutables por defecto
+- Si algo no debe cambiar después de construcción, hacelo const/readonly/final
+- Immutabilidad simplifica razonamiento y testing
+
+**Evitar Primitive Obsession**
+- No representés conceptos de dominio con tipos primitivos sueltos
+- ✅ `class Email { private string value; }`
+- ✅ `class Money { private decimal amount; private string currency; }`
+- ❌ `string email`
+- ❌ `decimal price`
+- Los tipos de dominio encapsulan validación, formato y comportamiento
+
+**Acoplamientos Sutiles: Formato, Cultura y Tiempo**
+- **Formatos:** No hardcodees formatos de fecha, moneda, número
+  - Abstrae formatos detrás de interfaces (`IDateFormatter`, `ICurrencyFormatter`)
+  - Permite testear sin depender de cultura del sistema
+- **Sistema de Reloj:** No uses `DateTime.Now` directamente
+  - Inyectá un reloj (`ISystemClock`, `IClock`)
+  - Permite testear código dependiente del tiempo
+  - Facilita simulación de escenarios
+- **Culture/Locale:** Evitá asumir cultura del usuario
+  - Pasá cultura explícitamente
+  - Eso facilita apps multi-idioma
+
+**Métodos y Clases Static: Úsalos Con Cuidado**
+- Los static crean acoplamientos implícitos e impiden testeo
+- ✅ Constantes: `static readonly`, `static const`
+- ✅ Factory methods simples (si es realmente simple)
+- ❌ Lógica stateful en static
+- ❌ Dependencias globales como static
+- Preferí instancias inyectables sobre static
+
+**Métodos Extensores vs Métodos Regulares vs Funciones Libres**
+- **Métodos regulares:** Comportamiento principal del tipo
+- **Extensores (extension methods):** Utilidades para tipos existentes (lógica periférica)
+- **Funciones libres:** Algoritmos puros sin estado; considerate cuando múltiples tipos interactúan
+- Evitá extensores que cambien el significado del tipo (confunde a quien lee)
+
+**Boundaries de Módulos: No Filtra Objetos del Dominio al Exterior**
+- Los objetos de dominio deberían vivir adentro del módulo
+- El exterior debe ver DTOs, responses, o representaciones específicas de API
+- Eso evita que cambios internos rompan contratos externos
+- Usá Adapters/Mappers para traducir entre mundos internos y externos
+
+---
+
+## Naming Global: Inglés vs. Dominio Local
+
+**Usá Inglés para Términos Ampliamente Conocidos**
+- `Factory`, `Mapper`, `Adapter`, `Repository`, `Service` → inglés
+- Son patrones globales; usar equivalentes locales genera confusión
+- El código es léido por múltiples culturas; inglés es estándar de facto
+
+**Usá Dominio Local para Conceptos de Negocio**
+- `Cliente`, `Orden`, `Factura` → tu idioma local
+- Eso asegura alignment con expertos del negocio
+- Recorda el "lenguaje ubicuo" (ver [lenguaje-de-dominio.md](lenguaje-de-dominio.md))
+
+**Evitá Nombres que Colisionen con Palabras Reservadas o Muy Similares**
+- ❌ `Field` en C# (colisiona con keyword `field`)
+- ❌ `Class` en cualquier lenguaje que lo use como keyword
+- ❌ `Data`, `Value` (demasiado vagos y genéricos)
+- ✅ `UserField`, `FieldDefinition`, `PersonData` (más específicos)
+- Si el nombre colisiona o es ambiguo, refinálo
+
+---
+
 ## Convenciones de Python
 
 **Lenguaje:** Python 3.x
